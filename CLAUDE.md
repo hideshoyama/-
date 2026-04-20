@@ -1,12 +1,17 @@
-# 顧客DB＆DM営業メール送信Webアプリ
+# 顧客DB＆DM営業メール送信Webアプリ — プロジェクト設計書
+
+## 最初に必ず読むこと
+
+このプロジェクトに関わるすべてのAIは、作業開始前に以下を必ず読むこと：
+- `AI_RULES.md` — すべてのAIが遵守すべき行動原則（憲法）
 
 ## プロジェクト概要
 
-庄山FP事務所（庄山英俊）が運営する事業全体のナレッジ管理基盤と、
-営業リスト収集ツール（MUSUBU/Urizo等）から取得した企業データを統合管理する顧客DBを構築し、
-その上でAI生成した営業メールをDM送信できるWebアプリケーション。
+庄山FP事務所（庄山英俊）の事業全体を支える**顧客管理（CRM）基盤DBを構築する**ことが最上位の目的である。
 
-将来的にはWebチャットボットとのナレッジ連携、CRM機能への拡張も視野に入れる。
+今回構築するDBは「このアプリ専用」ではなく、将来の顧客管理・営業管理・チャットボット連携まで見据えた事業基盤として設計する。
+
+その第一ステップとして、営業リスト収集ツール（MUSUBU/Urizo等）から取得した企業データをDBに統合管理し、AI生成した営業メールをDM送信できるWebアプリケーションを構築する。
 
 ## 技術スタック
 
@@ -16,63 +21,20 @@
 - **AI**: Azure OpenAI Service または Anthropic Claude API
 - **メール送信**: SMTP（抽象化済み、将来SendGrid/Azure Communication Servicesに切替可）
 
-## ディレクトリ構成
+## ナレッジ管理の方針（重要）
 
-```
-src/
-├── app/
-│   ├── page.tsx                    # ダッシュボード
-│   ├── customers/
-│   │   ├── page.tsx                # 企業一覧・フィルタリング
-│   │   └── [id]/page.tsx           # 企業詳細
-│   ├── import/
-│   │   └── page.tsx                # CSVインポート
-│   ├── lists/
-│   │   └── page.tsx                # 送信対象リスト管理
-│   ├── compose/
-│   │   └── page.tsx                # メール作成・AI生成
-│   ├── send/
-│   │   └── page.tsx                # 送信プレビュー・実行
-│   ├── knowledge/
-│   │   └── page.tsx                # ナレッジ管理
-│   └── api/
-│       ├── customers/              # 企業CRUD
-│       ├── import/                 # CSVインポート
-│       ├── lists/                  # 抽出リスト管理
-│       ├── generate/               # AIメール生成
-│       ├── send/                   # メール送信
-│       └── knowledge/              # ナレッジCRUD
-├── components/
-│   ├── customers/                  # 企業関連UIコンポーネント
-│   ├── import/                     # インポート関連
-│   ├── mail/                       # メール関連
-│   ├── knowledge/                  # ナレッジ関連
-│   └── ui/                         # shadcn/ui共通
-├── lib/
-│   ├── db/
-│   │   └── client.ts               # Prismaクライアント（シングルトン）
-│   ├── importers/
-│   │   ├── musubu.ts               # MUSUBUカラムマッピング
-│   │   ├── urizo.ts                # Urizoカラムマッピング
-│   │   └── custom.ts               # カスタムマッピング
-│   ├── duplicate-detector.ts       # 重複検出ロジック
-│   ├── ai.ts                       # AI API連携（メール生成）
-│   └── mailer.ts                   # メール送信（抽象化）
-└── types/
-    ├── customer.ts                 # 企業関連型定義
-    ├── import.ts                   # インポート関連型定義
-    ├── mail.ts                     # メール関連型定義
-    └── knowledge.ts                # ナレッジ関連型定義
+ナレッジには2種類ある。混同しないこと。
 
-prisma/
-└── schema.prisma                   # Prismaスキーマ（全テーブル定義）
+| 種類 | 場所 | 役割 |
+|------|------|------|
+| 素材・参照用 | `src/knowledge/*.md` | アプリ構築時・DB投入時の元ネタ。AIや人間が参照する |
+| アプリ実行時用 | DBの`knowledge_items`テーブル | アプリが実際に読み出してメール生成に使う |
 
-data/
-├── sample-musubu.csv               # MUSUBUサンプルCSV
-└── sample-urizo.csv                # UrizoサンプルCSV
-```
+- アプリはDBの `knowledge_items` テーブルからナレッジを読み出す
+- `src/knowledge/` のMarkdownファイルはDBへの初期投入（シード）の元ネタであり、削除しない
+- 将来的にAzure AI Search（RAG）への移行を想定した設計にしている
 
-## DBスキーマ（テーブル一覧）
+## DBスキーマ（19テーブル）
 
 ### ナレッジ管理系
 | テーブル | 概要 |
@@ -80,7 +42,7 @@ data/
 | `business_profiles` | 庄山FP事務所の基本情報（1レコード固定） |
 | `services` | 提供サービスマスタ（人事評価制度支援、FP相談等） |
 | `knowledge_categories` | ナレッジのカテゴリ（概要/メリット/料金/事例/FAQ等） |
-| `knowledge_items` | ナレッジ本体（Markdown形式、AIメール・チャットボット共用） |
+| `knowledge_items` | ナレッジ本体（Markdown形式で本文をDB保存） |
 | `knowledge_tags` | ナレッジ検索・分類用タグ |
 | `knowledge_item_tags` | ナレッジ×タグ中間テーブル |
 | `knowledge_versions` | ナレッジ変更履歴 |
@@ -125,25 +87,72 @@ data/
 | Urizo | 23 | BOM付きUTF-8（utf-8-sig） |
 | カスタム | 任意 | BOM付きUTF-8（utf-8-sig） |
 
-## 作業ルール
+## ディレクトリ構成（目標）
 
-1. ファイルの作成・変更・削除の前に必ず計画を提示し、明示的な承認を得てから実行すること
-2. Git操作も同様に事前確認すること
-3. 追加機能や設計変更を勝手に行わないこと
-4. CSVはBOM付きUTF-8（utf-8-sig）で保存すること
-5. 独自の設計判断やレイアウト判断をしないこと
-6. 不明点・矛盾を感じたら必ず質問して待つこと
+```
+src/
+├── app/
+│   ├── page.tsx                    # ダッシュボード
+│   ├── customers/
+│   │   ├── page.tsx                # 企業一覧・フィルタリング
+│   │   └── [id]/page.tsx           # 企業詳細
+│   ├── import/
+│   │   └── page.tsx                # CSVインポート
+│   ├── lists/
+│   │   └── page.tsx                # 送信対象リスト管理
+│   ├── compose/
+│   │   └── page.tsx                # メール作成・AI生成
+│   ├── send/
+│   │   └── page.tsx                # 送信プレビュー・実行
+│   ├── knowledge/
+│   │   └── page.tsx                # ナレッジ管理（DB操作）
+│   └── api/
+│       ├── customers/
+│       ├── import/
+│       ├── lists/
+│       ├── generate/
+│       ├── send/
+│       └── knowledge/
+├── components/
+│   ├── customers/
+│   ├── import/
+│   ├── mail/
+│   ├── knowledge/
+│   └── ui/
+├── lib/
+│   ├── db/
+│   │   └── client.ts
+│   ├── importers/
+│   │   ├── musubu.ts
+│   │   ├── urizo.ts
+│   │   └── custom.ts
+│   ├── duplicate-detector.ts
+│   ├── ai.ts
+│   └── mailer.ts
+└── types/
+    ├── customer.ts
+    ├── import.ts
+    ├── mail.ts
+    └── knowledge.ts
+
+prisma/
+└── schema.prisma
+
+data/
+├── sample-musubu.csv
+└── sample-urizo.csv
+```
 
 ## 開発フェーズ
 
-### Phase 1: 顧客データベース（現在）
+### Phase 1: 顧客データベース（現在進行中）
 - CSVインポート（MUSUBU/Urizo両対応）
 - 企業一覧・フィルタリング画面
 - 企業詳細画面
 - 送信対象リスト管理
 
 ### Phase 2: 営業メール生成（AI）
-- ナレッジ管理UI
+- ナレッジ管理UI（DBへのCRUD）
 - AIによるパーソナライズメール生成
 - テンプレート保存・再利用
 - 一括生成
@@ -175,3 +184,9 @@ DATABASE_URL="file:./dev.db"
 # SMTP_PASS=""
 # SMTP_FROM=""
 ```
+
+## changelog運用
+
+実装完了後は `changelog/` フォルダに新規ファイルを作成して記録を残す。
+ルールは `changelog.md`（プロジェクトルート直下）を参照。
+ファイル名の命名規則は `.agent/workflows/changelog_naming_rules.md` を参照。
