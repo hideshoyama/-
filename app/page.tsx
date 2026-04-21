@@ -1,65 +1,54 @@
-import Image from "next/image";
+import { prisma } from "@/lib/db/client";
+import Link from "next/link";
 
-export default function Home() {
+async function getStats() {
+  const [companyCount, listCount, importCount] = await Promise.all([
+    prisma.company.count(),
+    prisma.targetList.count(),
+    prisma.importSession.count(),
+  ]);
+  return { companyCount, listCount, importCount };
+}
+
+export default async function DashboardPage() {
+  const stats = await getStats();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">ダッシュボード</h1>
+
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <StatCard label="登録企業数" value={stats.companyCount} unit="社" />
+        <StatCard label="送信対象リスト" value={stats.listCount} unit="件" />
+        <StatCard label="インポート履歴" value={stats.importCount} unit="回" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <MenuCard href="/import" title="CSVインポート" description="MUSUBU・UrizoのCSVから企業データを取り込む" />
+        <MenuCard href="/customers" title="企業一覧" description="登録済みの企業データを検索・フィルタリング" />
+        <MenuCard href="/lists" title="送信対象リスト" description="DMを送る企業リストを作成・管理" />
+      </div>
     </div>
+  );
+}
+
+function StatCard({ label, value, unit }: { label: string; value: number; unit: string }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-5">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-3xl font-bold text-gray-900 mt-1">
+        {value.toLocaleString()}
+        <span className="text-base font-normal text-gray-500 ml-1">{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+function MenuCard({ href, title, description }: { href: string; title: string; description: string }) {
+  return (
+    <Link href={href} className="bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-sm transition-all">
+      <p className="text-base font-semibold text-gray-900">{title}</p>
+      <p className="text-sm text-gray-500 mt-1">{description}</p>
+    </Link>
   );
 }
