@@ -30,18 +30,18 @@ model BusinessProfile {
 
 // サービスマスタ（提供サービス一覧）
 model Service {
-  id               String           @id @default(cuid())
-  slug             String           @unique // "hr-evaluation", "fp-consulting" など
+  id               String   @id @default(cuid())
+  slug             String   @unique // "hr-evaluation", "fp-consulting" など
   name             String
   shortDescription String?
   targetAudience   String?
-  isActive         Boolean          @default(true)
-  displayOrder     Int              @default(0)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  isActive         Boolean  @default(true)
+  displayOrder     Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  knowledgeItems   KnowledgeItem[]
-  mailGenerations  MailGeneration[]
+  knowledgeItems  KnowledgeItem[]
+  mailGenerations MailGeneration[]
 
   @@map("services")
 }
@@ -51,10 +51,10 @@ model Service {
 //         "case_study"(事例), "faq"(FAQ), "profile"(実績・資格),
 //         "differentiator"(差別化ポイント), "flow"(導入フロー)
 model KnowledgeCategory {
-  id             String          @id @default(cuid())
-  slug           String          @unique
-  name           String
-  displayOrder   Int             @default(0)
+  id           String @id @default(cuid())
+  slug         String @unique
+  name         String
+  displayOrder Int    @default(0)
 
   knowledgeItems KnowledgeItem[]
 
@@ -63,35 +63,35 @@ model KnowledgeCategory {
 
 // ナレッジ本体（AIメール生成・チャットボット・RAGのソース）
 model KnowledgeItem {
-  id                 String             @id @default(cuid())
-  serviceId          String?            // NULL = 事務所全体共通ナレッジ
+  id                 String    @id @default(cuid())
+  serviceId          String? // NULL = 事務所全体共通ナレッジ
   categoryId         String
   title              String
-  content            String             // 本文（Markdown形式）
-  contentSummary     String?            // 要約（AIが短く使いたい場合用）
-  usageContext       String?            // "dm_email" | "chatbot" | "both"
+  content            String // 本文（Markdown形式）
+  contentSummary     String? // 要約（AIが短く使いたい場合用）
+  usageContext       String? // "dm_email" | "chatbot" | "both"
   sourceNote         String?
-  isActive           Boolean            @default(true)
-  version            Int                @default(1)
+  isActive           Boolean   @default(true)
+  version            Int       @default(1)
   // 将来Azure AI Search RAG移行用
   embeddingModel     String?
   embeddingVector    Bytes?
   embeddingUpdatedAt DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  service            Service?           @relation(fields: [serviceId], references: [id])
-  category           KnowledgeCategory  @relation(fields: [categoryId], references: [id])
-  tags               KnowledgeItemTag[]
-  versions           KnowledgeVersion[]
+  service  Service?           @relation(fields: [serviceId], references: [id])
+  category KnowledgeCategory  @relation(fields: [categoryId], references: [id])
+  tags     KnowledgeItemTag[]
+  versions KnowledgeVersion[]
 
   @@map("knowledge_items")
 }
 
 // タグマスタ
 model KnowledgeTag {
-  id    String             @id @default(cuid())
-  name  String             @unique
+  id   String @id @default(cuid())
+  name String @unique
 
   items KnowledgeItemTag[]
 
@@ -103,8 +103,8 @@ model KnowledgeItemTag {
   knowledgeItemId String
   tagId           String
 
-  knowledgeItem   KnowledgeItem @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
-  tag             KnowledgeTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  knowledgeItem KnowledgeItem @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
+  tag           KnowledgeTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([knowledgeItemId, tagId])
   @@map("knowledge_item_tags")
@@ -112,14 +112,14 @@ model KnowledgeItemTag {
 
 // ナレッジ変更履歴
 model KnowledgeVersion {
-  id              String        @id @default(cuid())
+  id              String   @id @default(cuid())
   knowledgeItemId String
   version         Int
   content         String
-  changedAt       DateTime      @default(now())
+  changedAt       DateTime @default(now())
   changeNote      String?
 
-  knowledgeItem   KnowledgeItem @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
+  knowledgeItem KnowledgeItem @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
 
   @@map("knowledge_versions")
 }
@@ -130,8 +130,8 @@ model KnowledgeVersion {
 
 // 企業マスタ（1企業1レコード）
 model Company {
-  id                 String           @id @default(cuid())
-  corporateNumber    String?          @unique // 法人番号（重複判定の最優先キー）
+  id                 String    @id @default(cuid())
+  corporateNumber    String?   @unique // 法人番号（重複判定の最優先キー）
   name               String
   nameKana           String?
   websiteUrl         String?
@@ -148,15 +148,15 @@ model Company {
   storeCount         Int?
   foundedAt          DateTime?
   shortDescription   String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  detail             CompanyDetail?
-  offices            Office[]
-  contacts           Contact[]
-  jobPostings        JobPosting[]
-  sources            CompanySource[]
-  targetListItems    TargetListItem[]
+  detail          CompanyDetail?
+  offices         Office[]
+  contacts        Contact[]
+  jobPostings     JobPosting[]
+  sources         CompanySource[]
+  targetListItems TargetListItem[]
 
   @@map("companies")
 }
@@ -173,14 +173,14 @@ model CompanyDetail {
   businessFeatures  String? // "BtoB","BtoC" 等 カンマ区切り
   companyOverview   String?
 
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("company_details")
 }
 
 // 事業所（1企業に複数あり得る）
 model Office {
-  id                   String    @id @default(cuid())
+  id                   String  @id @default(cuid())
   companyId            String
   officeName           String?
   officeNameKana       String?
@@ -194,23 +194,23 @@ model Office {
   fullAddress          String?
   registeredPostalCode String?
   registeredAddress    String?
-  isHeadquarters       Boolean   @default(false)
+  isHeadquarters       Boolean @default(false)
 
-  company              Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contacts             Contact[]
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts Contact[]
 
   @@map("offices")
 }
 
 // 連絡先（メール/電話/FAX/フォームURL）
 model Contact {
-  id              String           @id @default(cuid())
-  companyId       String
-  officeId        String?
-  contactType     String           // "email" | "phone" | "fax" | "form"
-  value           String
-  isPrimary       Boolean          @default(false)
-  label           String?
+  id          String  @id @default(cuid())
+  companyId   String
+  officeId    String?
+  contactType String // "email" | "phone" | "fax" | "form"
+  value       String
+  isPrimary   Boolean @default(false)
+  label       String?
 
   company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   office          Office?          @relation(fields: [officeId], references: [id])
@@ -228,7 +228,7 @@ model JobPosting {
   estimatedAnnualCost BigInt?
   jobUrl              String?
 
-  company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("job_postings")
 }
@@ -239,29 +239,29 @@ model JobPosting {
 
 // インポートソース定義（MUSUBU/Urizo/カスタム）
 model ImportSource {
-  id          String          @id @default(cuid())
-  name        String          // "MUSUBU" | "Urizo" | "custom"
+  id          String   @id @default(cuid())
+  name        String // "MUSUBU" | "Urizo" | "custom"
   displayName String
   description String?
-  createdAt   DateTime        @default(now())
+  createdAt   DateTime @default(now())
 
-  sessions    ImportSession[]
+  sessions ImportSession[]
 
   @@map("import_sources")
 }
 
 // インポート実行履歴
 model ImportSession {
-  id             String          @id @default(cuid())
-  sourceId       String
-  fileName       String
-  totalRows      Int
-  importedRows   Int
-  skippedRows    Int
-  duplicateRows  Int
-  status         String          // "completed" | "failed" | "partial"
-  importedAt     DateTime        @default(now())
-  errorLog       String?
+  id            String   @id @default(cuid())
+  sourceId      String
+  fileName      String
+  totalRows     Int
+  importedRows  Int
+  skippedRows   Int
+  duplicateRows Int
+  status        String // "completed" | "failed" | "partial"
+  importedAt    DateTime @default(now())
+  errorLog      String?
 
   source         ImportSource    @relation(fields: [sourceId], references: [id])
   companySources CompanySource[]
@@ -271,14 +271,14 @@ model ImportSession {
 
 // 企業×ソース紐づけ（1企業が複数ソースから来た場合の追跡）
 model CompanySource {
-  id              String        @id @default(cuid())
+  id              String   @id @default(cuid())
   companyId       String
   importSessionId String
-  sourceRowData   String        // 元のCSV行データをJSON文字列で保存
-  createdAt       DateTime      @default(now())
+  sourceRowData   String // 元のCSV行データをJSON文字列で保存
+  createdAt       DateTime @default(now())
 
-  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  importSession   ImportSession @relation(fields: [importSessionId], references: [id])
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  importSession ImportSession @relation(fields: [importSessionId], references: [id])
 
   @@map("company_sources")
 }
@@ -289,27 +289,27 @@ model CompanySource {
 
 // 送信対象リスト
 model TargetList {
-  id             String           @id @default(cuid())
+  id             String   @id @default(cuid())
   name           String
   description    String?
-  filterSnapshot String?          // 作成時のフィルタ条件をJSON文字列で保存
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  filterSnapshot String? // 作成時のフィルタ条件をJSON文字列で保存
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  items          TargetListItem[]
+  items TargetListItem[]
 
   @@map("target_lists")
 }
 
 // 送信対象リストの中身
 model TargetListItem {
-  id          String           @id @default(cuid())
+  id          String   @id @default(cuid())
   listId      String
   companyId   String
   contactId   String?
-  addedAt     DateTime         @default(now())
+  addedAt     DateTime @default(now())
   // CRM拡張余地（Phase 1はNULL）
-  salesStatus String?          // "lead" | "approached" | "negotiating" | "closed"
+  salesStatus String? // "lead" | "approached" | "negotiating" | "closed"
   memo        String?
 
   list            TargetList       @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -323,32 +323,32 @@ model TargetListItem {
 
 // AI生成メール
 model MailGeneration {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   listItemId  String
   serviceId   String
   subject     String
   body        String
-  generatedAt DateTime       @default(now())
+  generatedAt DateTime @default(now())
   editedBody  String?
-  isApproved  Boolean        @default(false)
+  isApproved  Boolean  @default(false)
 
-  listItem    TargetListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
-  service     Service        @relation(fields: [serviceId], references: [id])
-  sendLogs    SendLog[]
+  listItem TargetListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+  service  Service        @relation(fields: [serviceId], references: [id])
+  sendLogs SendLog[]
 
   @@map("mail_generations")
 }
 
 // 送信ログ
 model SendLog {
-  id               String         @id @default(cuid())
+  id               String   @id @default(cuid())
   mailGenerationId String
-  sentAt           DateTime       @default(now())
+  sentAt           DateTime @default(now())
   sentTo           String
-  status           String         // "sent" | "failed" | "bounced"
+  status           String // "sent" | "failed" | "bounced"
   errorMessage     String?
 
-  mailGeneration   MailGeneration @relation(fields: [mailGenerationId], references: [id])
+  mailGeneration MailGeneration @relation(fields: [mailGenerationId], references: [id])
 
   @@map("send_logs")
 }
